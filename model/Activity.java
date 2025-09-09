@@ -1,31 +1,39 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
 @Entity
-@Table(name = "tegevus")
+@Table(name = "activity") // skeemis on väiketähtedega
 public class Activity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "huviring_id", nullable = false)
-    private Club club;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.RESTRICT)
+    @JoinColumn(name = "hobby_group_id", nullable = false)
+    private HobbyGroup hobbyGroup;
 
-    @Column(name = "nimi", nullable = false, length = 50)
+    @Size(max = 50)
+    @NotNull
+    @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(name = "toimumise_kp", nullable = false)
-    private LocalDateTime occurrenceDate;
-
-    // --- Getters/Setters ---
-    public Long getId() { return id; }
-    public Club getClub() { return club; }
-    public void setClub(Club club) { this.club = club; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public LocalDateTime getOccurrenceDate() { return occurrenceDate; }
-    public void setOccurrenceDate(LocalDateTime occurrenceDate) { this.occurrenceDate = occurrenceDate; }
+    @NotNull
+    @Future(message = "Scheduled date must be in the future")
+    @Column(name = "scheduled_at", nullable = false)
+    private LocalDateTime scheduledAt;
 }

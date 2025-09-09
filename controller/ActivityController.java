@@ -2,89 +2,78 @@ package com.example.controller;
 
 import com.example.dto.ActivityDTO;
 import com.example.model.Activity;
+import com.example.model.HobbyGroup;
 import com.example.service.ActivityService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.example.service.HobbyGroupService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/tegevused")
+@RequestMapping("/activities")
+@RequiredArgsConstructor
 public class ActivityController {
 
     private final ActivityService activityService;
+    private final HobbyGroupService hobbyGroupService;
 
-    @Autowired
-    public ActivityController(ActivityService activityService) {
-        this.activityService = activityService;
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ActivityDTO> getActivityById(@PathVariable Long id) {
-        return activityService.getActivityById(id)
+    @GetMapping("/club/{clubId}")
+    public List<ActivityDTO> getByClubId(@PathVariable Long clubId) {
+        return activityService.getActivitiesByHobbyGroupId(clubId).stream()
                 .map(this::convertToDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .collect(Collectors.toList());
     }
 
-    @PostMapping("/klubi/{clubId}")
-    public ResponseEntity<ActivityDTO> createActivity(
-            @PathVariable Long clubId,
-            @RequestBody ActivityDTO activityDTO) {
+    @PostMapping
+    public ActivityDTO createActivity(@RequestBody ActivityDTO activityDTO) {
         Activity activity = convertToEntity(activityDTO);
-        Activity createdActivity = activityService.createActivity(clubId, activity);
-        return new ResponseEntity<>(convertToDTO(createdActivity), HttpStatus.CREATED);
+        Activity saved = activityService.saveActivity(activity);
+        return convertToDTO(saved);
     }
-
-    @GetMapping
-    public ResponseEntity<List<ActivityDTO>> getAllActivities() {
-        List<ActivityDTO> activities = activityService.getAllActivities().stream()
-                .map(this::convertToDTO)
-                .toList(); // Java 16+
-        return ResponseEntity.ok(activities);
-    }
-
-    @GetMapping("/klubi/{clubId}")
-    public ResponseEntity<List<ActivityDTO>> getActivitiesByClubId(@PathVariable Long clubId) {
-        List<ActivityDTO> activities = activityService.getActivitiesByClubId(clubId).stream()
-                .map(this::convertToDTO)
-                .toList(); // Java 16+
-        return ResponseEntity.ok(activities);
-    }
-
 
     @PutMapping("/{id}")
-    public ResponseEntity<ActivityDTO> updateActivity(
-            @PathVariable Long id,
-            @RequestBody ActivityDTO activityDTO) {
-        Activity activity = convertToEntity(activityDTO);
-        Activity updatedActivity = activityService.updateActivity(id, activity);
-        return ResponseEntity.ok(convertToDTO(updatedActivity));
-    }
+    public ActivityDTO updateActivity(@PathVariable Long id, @RequestBody ActivityDTO activityDTO) {
+        Activity existing = activityService.getActivityById(id)
+                .orElseThrow(() -> new RuntimeException("Activity not found with id: " + id));
 
+        existing.setName(activityDTO.getName());
+        existing.setScheduledAt(activityDTO.getOccurrenceDate());
+
+        if (activityDTO.getClubId() != null) {
+            HobbyGroup hobbyGroup = hobbyGroupService.getHobbyGroupById(activityDTO.getClubId());
+            existing.setHobbyGroup(hobbyGroup);
+        }
+
+        Activity updated = activityService.saveActivity(existing);
+        return convertToDTO(updated);
+    }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteActivity(@PathVariable Long id) {
+    public void deleteActivity(@PathVariable Long id) {
         activityService.deleteActivity(id);
-        return ResponseEntity.noContent().build();
     }
-
 
     private ActivityDTO convertToDTO(Activity activity) {
         return new ActivityDTO(
                 activity.getId(),
-                activity.getClub().getId(),
+                activity.getHobbyGroup() != null ? activity.getHobbyGroup().getId().longValue() : null,
                 activity.getName(),
-                activity.getOccurrenceDate()
+                activity.getScheduledAt()
         );
     }
 
-    private Activity convertToEntity(ActivityDTO activityDTO) {
+    private Activity convertToEntity(ActivityDTO dto) {
         Activity activity = new Activity();
-        activity.setName(activityDTO.getName());
-        activity.setOccurrenceDate(activityDTO.getOccurrenceDate());
+        activity.setName(dto.getName());
+        activity.setScheduledAt(dto.getOccurrenceDate());
+
+        if (dto.getClubId() != null) {
+            HobbyGroup hobbyGroup = hobbyGroupService.getHobbyGroupById(dto.getClubId());
+            activity.setHobbyGroup(hobbyGroup);
+        }
+
         return activity;
     }
 }

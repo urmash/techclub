@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.dto.ParticipantRequestDTO;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Participant;
 import com.example.repository.ParticipantRepository;
@@ -21,7 +22,11 @@ public class ParticipantService {
     }
 
     @Transactional
-    public Participant createParticipant(Participant participant) {
+    public Participant createParticipant(ParticipantRequestDTO dto) {
+        Participant participant = new Participant();
+        participant.setFirstName(dto.getFirstName());
+        participant.setLastName(dto.getLastName());
+        participant.setJoinedAt(dto.getJoinedAt());
         return participantRepository.save(participant);
     }
 
@@ -34,13 +39,13 @@ public class ParticipantService {
     }
 
     @Transactional
-    public Participant updateParticipant(Long id, Participant updatedParticipant) {
+    public Participant updateParticipant(Long id, ParticipantRequestDTO dto) {
         Participant existingParticipant = participantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Participant not found with id: " + id));
 
-        existingParticipant.setFirstName(updatedParticipant.getFirstName());
-        existingParticipant.setLastName(updatedParticipant.getLastName());
-        existingParticipant.setJoinedAt(updatedParticipant.getJoinedAt());
+        existingParticipant.setFirstName(dto.getFirstName());
+        existingParticipant.setLastName(dto.getLastName());
+        existingParticipant.setJoinedAt(dto.getJoinedAt());
 
         return participantRepository.save(existingParticipant);
     }

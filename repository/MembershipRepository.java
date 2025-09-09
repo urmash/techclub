@@ -1,24 +1,22 @@
 package com.example.repository;
 
 import com.example.model.Membership;
+import com.example.model.MembershipId;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface MembershipRepository extends JpaRepository<Membership, Membership.MembershipId> {
+public interface MembershipRepository extends JpaRepository<Membership, MembershipId> {
 
-    List<Membership> findByClubId(Long clubId);
+    Optional<Membership> findById(MembershipId id);
 
-    List<Membership> findByParticipantId(Long participantId);
+    // leia kõik liikmesused HobbyGroup ID järgi
+    List<Membership> findByHobbyGroup_Id(Long hobbyGroupId);
 
-    @Modifying
-    @Query("DELETE FROM Membership m WHERE m.club.id = :clubId AND m.participant.id = :participantId")
-    void deleteByClubIdAndParticipantId(@Param("clubId") Long clubId,
-                                        @Param("participantId") Long participantId);
+    // leia kõik liikmesused konkreetse osaleja ID järgi
+    List<Membership> findByParticipant_Id(Long participantId);
 
-    Optional<Membership> findById(Membership.MembershipId id);
+    // kustuta liikmesus konkreetse HobbyGroup ja osaleja järgi
+    void deleteByHobbyGroup_IdAndParticipant_Id(Long hobbyGroupId, Long participantId);
 }

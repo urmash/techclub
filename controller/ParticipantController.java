@@ -1,75 +1,60 @@
 package com.example.controller;
 
-import com.example.dto.ParticipantDTO;
-import com.example.exception.ResourceNotFoundException;
+import com.example.dto.ParticipantRequestDTO;
+import com.example.dto.ParticipantResponseDTO;
+import com.example.mapper.ParticipantMapper;
 import com.example.model.Participant;
 import com.example.service.ParticipantService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/participants")
+@RequestMapping("/api/participants")
 public class ParticipantController {
 
     private final ParticipantService participantService;
 
+    @Autowired
     public ParticipantController(ParticipantService participantService) {
         this.participantService = participantService;
     }
 
     @PostMapping
-    public ResponseEntity<ParticipantDTO> createParticipant(@RequestBody ParticipantDTO participantDTO) {
-        Participant participant = convertToEntity(participantDTO);
-        Participant savedParticipant = participantService.createParticipant(participant);
-        return ResponseEntity.ok(convertToDTO(savedParticipant));
+    public ResponseEntity<ParticipantResponseDTO> createParticipant(@Valid @RequestBody ParticipantRequestDTO dto) {
+        Participant saved = participantService.createParticipant(dto);
+        return ResponseEntity.ok(ParticipantMapper.toDTO(saved));
     }
 
     @GetMapping
-    public ResponseEntity<List<ParticipantDTO>> getAllParticipants() {
-        List<ParticipantDTO> participants = participantService.getAllParticipants()
-                .stream()
-                .map(this::convertToDTO)
-                .toList(); // ✅ kasutame Java 16+ toList()
-        return ResponseEntity.ok(participants);
+    public ResponseEntity<List<ParticipantResponseDTO>> getAllParticipants() {
+        List<Participant> participants = participantService.getAllParticipants();
+        List<ParticipantResponseDTO> dtos = participants.stream()
+                .map(ParticipantMapper::toDTO)
+                .toList(); // returns an unmodifiable List
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ParticipantDTO> getParticipantById(@PathVariable Long id) {
+    public ResponseEntity<ParticipantResponseDTO> getParticipantById(@PathVariable Long id) {
         Participant participant = participantService.getParticipantById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Participant not found with id: " + id));
-        return ResponseEntity.ok(convertToDTO(participant));
+                .orElseThrow(() -> new RuntimeException("Participant not found"));
+        return ResponseEntity.ok(ParticipantMapper.toDTO(participant));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ParticipantDTO> updateParticipant(@PathVariable Long id, @RequestBody ParticipantDTO participantDTO) {
-        Participant updatedParticipant = convertToEntity(participantDTO);
-        Participant savedParticipant = participantService.updateParticipant(id, updatedParticipant);
-        return ResponseEntity.ok(convertToDTO(savedParticipant));
+    public ResponseEntity<ParticipantResponseDTO> updateParticipant(@PathVariable Long id,
+                                                                    @Valid @RequestBody ParticipantRequestDTO dto) {
+        Participant updated = participantService.updateParticipant(id, dto);
+        return ResponseEntity.ok(ParticipantMapper.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteParticipant(@PathVariable Long id) {
         participantService.deleteParticipant(id);
         return ResponseEntity.noContent().build();
-    }
-
-    // --- Helper methods ---
-    private ParticipantDTO convertToDTO(Participant participant) {
-        return new ParticipantDTO(
-                participant.getId(),
-                participant.getFirstName(),
-                participant.getLastName(),
-                participant.getJoinedAt()
-        );
-    }
-
-    private Participant convertToEntity(ParticipantDTO participantDTO) {
-        Participant participant = new Participant();
-        participant.setFirstName(participantDTO.getFirstName());
-        participant.setLastName(participantDTO.getLastName());
-        participant.setJoinedAt(participantDTO.getJoinedAt());
-        return participant;
     }
 }

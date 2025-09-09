@@ -1,35 +1,21 @@
 package com.example.service;
 
-import com.example.exception.ResourceNotFoundException;
 import com.example.model.Activity;
-import com.example.model.Club;
 import com.example.repository.ActivityRepository;
-import com.example.repository.ClubRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class ActivityService {
 
     private final ActivityRepository activityRepository;
-    private final ClubRepository clubRepository;
 
-    @Autowired
-    public ActivityService(ActivityRepository activityRepository,
-                           ClubRepository clubRepository) {
-        this.activityRepository = activityRepository;
-        this.clubRepository = clubRepository;
-    }
-
-    @Transactional
-    public Activity createActivity(Long clubId, Activity activity) {
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new ResourceNotFoundException("Klubi ei leitud id-ga: " + clubId));
-        activity.setClub(club);
+    public Activity createActivity(Long hobbyGroupId, Activity activity) {
+        // vajadusel seome HobbyGroup siit
         return activityRepository.save(activity);
     }
 
@@ -37,29 +23,29 @@ public class ActivityService {
         return activityRepository.findAll();
     }
 
-    public List<Activity> getActivitiesByClubId(Long clubId) {
-        return activityRepository.findByClubId(clubId);
+    public List<Activity> getActivitiesByHobbyGroupId(Long hobbyGroupId) {
+        return activityRepository.findByHobbyGroupId(hobbyGroupId);
     }
 
-    @Transactional
     public Activity updateActivity(Long id, Activity updatedActivity) {
         Activity existingActivity = activityRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tegevus ei leitud id-ga: " + id));
+                .orElseThrow(() -> new RuntimeException("Tegevus ei leitud id-ga: " + id));
 
         existingActivity.setName(updatedActivity.getName());
-        existingActivity.setOccurrenceDate(updatedActivity.getOccurrenceDate());
-        return activityRepository.save(existingActivity);
-    }
+        existingActivity.setScheduledAt(updatedActivity.getScheduledAt());
 
-    @Transactional
-    public void deleteActivity(Long id) {
-        if (!activityRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Tegevus ei leitud id-ga: " + id);
-        }
-        activityRepository.deleteById(id);
+        return activityRepository.save(existingActivity);
     }
 
     public Optional<Activity> getActivityById(Long id) {
         return activityRepository.findById(id);
+    }
+
+    public void deleteActivity(Long id) {
+        activityRepository.deleteById(id);
+    }
+
+    public Activity saveActivity(Activity activity) {
+        return activityRepository.save(activity);
     }
 }

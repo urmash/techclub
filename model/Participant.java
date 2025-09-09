@@ -2,8 +2,9 @@ package com.example.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class Participant {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,4 +26,14 @@ public class Participant {
 
     @Column(name = "joined_at", nullable = false, updatable = false)
     private LocalDateTime joinedAt = LocalDateTime.now();
+
+    /**
+     * Tagastab osaleja täisnime kujul "Eesnimi Perekonnanimi".
+     * Nullväärtuste korral asendab tühja stringiga ning lõikab liigsed tühikud ära.
+     */
+    public String getFullName() {
+        String fn = firstName != null ? firstName : "";
+        String ln = lastName != null ? lastName : "";
+        return (fn + " " + ln).trim();
+    }
 }

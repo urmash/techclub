@@ -1,59 +1,52 @@
 package com.example.service;
 
-import com.example.model.Club;
+import com.example.model.HobbyGroup;
 import com.example.model.Membership;
+import com.example.model.MembershipId;
 import com.example.model.Participant;
-import com.example.repository.ClubRepository;
+import com.example.repository.HobbyGroupRepository;
 import com.example.repository.MembershipRepository;
 import com.example.repository.ParticipantRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class MembershipService {
 
     private final MembershipRepository membershipRepository;
-    private final ClubRepository clubRepository;
+    private final HobbyGroupRepository hobbyGroupRepository;
     private final ParticipantRepository participantRepository;
 
-    @Autowired
-    public MembershipService(MembershipRepository membershipRepository,
-                             ClubRepository clubRepository,
-                             ParticipantRepository participantRepository) {
-        this.membershipRepository = membershipRepository;
-        this.clubRepository = clubRepository;
-        this.participantRepository = participantRepository;
-    }
-
-    // Osaleja klubiga liitmine
-    @Transactional
-    public Membership joinClub(Long clubId, Long participantId) {
-        Club club = clubRepository.findById(clubId)
-                .orElseThrow(() -> new RuntimeException("Klubi ei leitud id-ga: " + clubId));
-
+    public Membership joinClub(Long hobbyGroupId, Long participantId) {
+        HobbyGroup group = hobbyGroupRepository.findById(hobbyGroupId)
+                .orElseThrow(() -> new RuntimeException("HobbyGroup not found with id: " + hobbyGroupId));
         Participant participant = participantRepository.findById(participantId)
-                .orElseThrow(() -> new RuntimeException("Osaleja ei leitud id-ga: " + participantId));
+                .orElseThrow(() -> new RuntimeException("Participant not found with id: " + participantId));
 
         Membership membership = new Membership();
-        membership.setClub(club);
+        membership.setHobbyGroup(group);
         membership.setParticipant(participant);
 
         return membershipRepository.save(membership);
     }
 
-    @Transactional
-    public void leaveClub(Long clubId, Long participantId) {
-        membershipRepository.deleteByClubIdAndParticipantId(clubId, participantId);
+    public void leaveClub(Long hobbyGroupId, Long participantId) {
+        membershipRepository.deleteByHobbyGroup_IdAndParticipant_Id(hobbyGroupId, participantId);
     }
 
-    public List<Membership> getClubMembers(Long clubId) {
-        return membershipRepository.findByClubId(clubId);
+    public List<Membership> getClubMembers(Long hobbyGroupId) {
+        return membershipRepository.findByHobbyGroup_Id(hobbyGroupId);
     }
 
     public List<Membership> getParticipantsClubs(Long participantId) {
-        return membershipRepository.findByParticipantId(participantId);
+        return membershipRepository.findByParticipant_Id(participantId);
+    }
+
+    public Membership getMembership(MembershipId id) {
+        return membershipRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Membership not found with id: " + id));
     }
 }
