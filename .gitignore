@@ -2,20 +2,6 @@
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-# Gradle build cache ja lukufailid
-.gradle/
-build/
-
-# IntelliJ IDEA konfiguratsioon
-.idea/
-*.iml
-
-# OS-spetsiifilised failid
-.DS_Store
-Thumbs.db
-
-# SQL failide reavahetuse hoiatused ignoreeritavad
-*.sql
 
 ### Eclipse ###
 .apt_generated
@@ -38,3 +24,6 @@ bin/
 
 ### VS Code ###
 .vscode/
+
+### Mac OS ###
+.DS_Store
